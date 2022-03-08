@@ -1,5 +1,7 @@
 import re
 
+class ParseError(Exception):
+    pass
 
 class Sentence:
     """"""
@@ -9,113 +11,71 @@ class Sentence:
         self.morphs = morphs
         self.glosses = glosses
         self.order_id = order_id
-# ...
+
+    def merge_glosses_morphs(self):
+        """"""
+        if len(self.glosses) == len(self.morphs):  # остается проблема склеившихся глосс типа "basket(r)"
+            morphs_merged = ' '.join(self.morphs).replace('- ', '-').replace(' -', '-').split()
+            glosses_merged = ' '.join(self.glosses).replace('- ', '-').replace(' -', '-').split()
+
+            return morphs_merged, glosses_merged
+
+        else:
+            raise ParseError('The number of morphs and glosses is different')
+
+    def make_line(self):
+        """"""
+        line = self.order_id
+        try:
+            morphs_merged, glosses_merged = self.merge_glosses_morphs()
+            line += '\n'
+            line += '\t'.join(morphs_merged) + '\n'
+            line += '\t'.join(glosses_merged) + '\n'
+
+        except ParseError:
+            line += ' ParseError\n'
+            line += '\t'.join(' '.join(self.morphs).replace('- ', '-').replace(' -', '-').split()) + '\n'
+            line += '\t'.join(' '.join(self.glosses).replace('- ', '-').replace(' -', '-').split()) + '\n'
+
+        line += self.translation + '\n' + '\n'
+        return line
 
 def op(file_name):
     with open(file_name + '.txt', encoding='utf-8') as f:
         txt = f.read()
     return txt
 
-def search_sentences(txt):
-    refs = txt.split('\\ref')
-    info, sentense_chunks = refs[0], refs[1:]
-    #print(sentense_chunks[0])
-    for chunk in sentense_chunks:
-        translation = re.findall('\\\\ft(.*)', chunk)
-        order_id = re.findall('\.(\d\d\d)', chunk)
-        morphs = re.findall('\\\\mb(.*)', chunk)[0].split()
-        glosses = re.findall('\\\\ge(.*)', chunk.replace(', ', ','))[0].split()  # replace, для корней типа "do, make"
-        #print(translation)
-        #print(order_id)
-        #print(morphs)
-        #print(glosses)
-        morph_gloss_merger(glosses, morphs)
+def wr(file_name, line):
+    with open(file_name + '.tsv', 'a', encoding='utf-8') as f:
+        f.write(line)
+
+def main(txt):
+    texts = txt.split('\\id')
+    for text in texts:
+        refs = text.split('\\ref')
+        info, sentense_chunks = refs[0], refs[1:]
+        file_name = info.split('\n')[0].replace('.', '_')
+        with open(file_name + '.tsv', 'w', encoding='utf-8') as f:
+            pass
+
+        for chunk in sentense_chunks:
+            try:
+                translation = re.findall('\\\\ft(.*)', chunk)[0]
+                if len(translation) == 0:
+                    translation = 'NO TRANSLATION'
+            except:
+                translation = 'NO TRANSLATION'
+            order_id = str(re.findall('\.(\d\d\d)', chunk)[0])
+            morphs = re.findall('\\\\mb(.*)', chunk)[0].split()
+            glosses = re.findall('\\\\ge(.*)', chunk.replace(', ', ','))[
+                0].split()  # replace, для корней типа "do, make"
+
+            current_sentence = Sentence(translation, morphs, glosses, order_id)
+            wr(file_name, current_sentence.make_line())
 
 
-
-def morph_gloss_merger(glosses, morphs):
-    if len(glosses) == len(morphs):  # остается проблема склеившихся глосс типа "basket(r)"
-        prev_morph_type = 'root'
-
-        morph_word = ''
-        gloss_word = ''
-
-        morphs_merged = []
-        glosses_merged = []
-
-        for i in range(len(morphs)):
-            current_morph = morphs[i]
-            current_gloss = glosses[i]
-            symbs = tuple(['-', '='])
-
-            if current_morph.startswith(symbs):
-                current_morph_type = 'post'
-            elif current_morph.endswith(symbs):
-                current_morph_type = 'pre'
-            else:
-                current_morph_type = 'root'
-
-            if prev_morph_type == 'root' and current_morph_type == 'root' \
-                    or prev_morph_type == 'post' and current_morph_type == 'root' \
-                    or prev_morph_type == 'root' and current_morph_type == 'post' \
-                    or prev_morph_type == 'root' and current_morph_type == 'root' \
-                    or prev_morph_type == 'post' and current_morph_type == 'pre':
-                morphs_merged.append(morph_word)
-                glosses_merged.append(gloss_word)
-                print(morph_word)
-                print(gloss_word)
-                morph_word = ''
-                gloss_word = ''
-            else:
-
-                morph_word += current_morph
-                gloss_word += current_gloss
-
-            prev_morph_type = current_morph_type
-
-
-
-    else:
-        print(morphs, '\n', glosses)
-        print(len(morphs), len(glosses))
-        print()
-
-
-#
-# def translation(txt):
-#     txt = txt.replace('\\rf', '')  # remove. only for Bezhta
-#     tr = re.findall('\\\\ft(.*)', txt)
-#     print(tr)
-#     return tr
-#
-# def wr(s, name):
-#     with open(name + 'T.txt', 'a') as f:
-#         f.write(s)
-#
-# def numb(s):
-#     if '\\ref' in s:
-#         try:
-#             n = s[len(s)-4: len(s)].replace('\n', '').replace("'", '').replace("#", '')
-#             int(n)
-#         except:
-#             n = 0
-#         return '(' + str(int(n)) + ')'
-#
-#     else:
-#         return ''
-#
-# def main(name):
-#     txt = op(name)
-#     tr = translation(txt)
-#     with open(name + 'T.txt', 'w', encoding='utf-8') as f:
-#         pass
-#     n = ''
-#     for s in tr:
-#         s = n + s + '\n'
-#         n = numb(s)
-#         wr(s.replace('\\rt', ''), name)
 
 if __name__ == '__main__':
     # main("data/Khwarshi_PS")
     txt = op("data/Khwarshi_PS")
-    search_sentences(txt)
+    main(txt)
