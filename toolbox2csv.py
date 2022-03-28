@@ -76,6 +76,5 @@ def main(txt):
 
 
 if __name__ == '__main__':
-    # main("data/Khwarshi_PS")
-    txt = op("data/Khwarshi_PS.txt")
+    txt = op("data/Hinuq_PS.txt")
     main(txt)
