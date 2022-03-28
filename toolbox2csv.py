@@ -41,12 +41,12 @@ class Sentence:
         return line
 
 def op(file_name):
-    with open(file_name + '.txt', encoding='utf-8') as f:
+    with open(file_name, encoding='utf-8') as f:
         txt = f.read()
     return txt
 
 def wr(file_name, line):
-    with open(file_name + '.tsv', 'a', encoding='utf-8') as f:
+    with open(file_name, 'a', encoding='utf-8') as f:
         f.write(line)
 
 def main(txt):
@@ -71,11 +71,11 @@ def main(txt):
                 0].split()  # replace, для корней типа "do, make"
 
             current_sentence = Sentence(translation, morphs, glosses, order_id)
-            wr(file_name, current_sentence.make_line())
+            wr(file_name + '.tsv', current_sentence.make_line())
 
 
 
 if __name__ == '__main__':
     # main("data/Khwarshi_PS")
-    txt = op("data/Khwarshi_PS")
+    txt = op("data/Khwarshi_PS.txt")
     main(txt)
