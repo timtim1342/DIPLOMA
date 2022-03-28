@@ -8,31 +8,31 @@ from toolbox2csv import op, wr
 class Sentence:
     """"""
 
-    def __init__(self, translation, transcription, indexation, note):
+    def __init__(self, translation, words):
         """"""
         self.translation = translation
-        self.transcription = transcription
-        self.indexation = indexation
-        self.note = note
-
+        self.words = words
 
 class Pred:
     """"""
 
-    def __init__(self, fin, index):
+    def __init__(self, transcription, fin, index):
         """"""
+        self.transcription = transcription  # можно сделать черех наследование
         self.fin = fin
         self.index = index
 
 class RefDevice:
     """"""
 
-    def __init__(self, n_arg, case, referent, index, type):
+    def __init__(self, transcription, n_arg, case, referent, index, type):
         """"""
+        self.transcription = transcription
         self.n_arg = n_arg
         self.case = case
         self.referent = referent
         self.type = type
+        self.index = index
 
 def parse_table(txt):
     """делит текст на строки по типу"""
@@ -48,7 +48,55 @@ def main():
     for file in files:
         txt = op(join('texts_done', file))
         all_translation, all_transcription, all_indexation, all_note = parse_table(txt)
-        print(all_transcription)
+
+
+    # ... все что ниже на одну табуляцию сместить
+
+    text = []
+
+    for i in range(len(all_transcription)):
+        sentence = []
+        translation, transcription, indexation, note = all_translation[i],\
+                                                       all_transcription[i],\
+                                                       all_indexation[i],\
+                                                       all_note[i]
+        for j in range(len(transcription)):
+            if indexation[j] != '':  # размеченное слово
+
+                if 'pred' in indexation[j]:  # предикат
+                    fin = note[j]
+                    index = findall('\((\d+)\)', indexation[j])[0]
+
+                    word = Pred(transcription[j], fin, index)
+
+                else:  # референциальное средство
+                    n_arg = 'NOTARG'
+                    case = 'NOCASE'
+                    referent = findall('([^/(]+)\(.+\)', indexation[j])[0]
+                    index = findall('\((\d+)\)', indexation[j])[0]
+
+                    if transcription[j] == 'Ø':
+                        type = 'null'
+                    elif indexation[j][0].istitle():
+                        type = 'NP'
+                    else:
+                        type = 'dem'
+
+                    if note[j] != '':  # неаргумент
+                        n_arg = findall('(\d+)\(', note[j])[0]
+                        case = findall('\((.+)\)', note[j])[0]
+
+                    word = RefDevice(transcription[j], n_arg, case, referent, index, type)
+
+            else:
+                word = transcription[j]
+
+            sentence.append(word)
+
+        sentence = Sentence(all_translation[i][1], sentence)
+        text.append(sentence)
+
+
 
 
 
