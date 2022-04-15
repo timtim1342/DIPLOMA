@@ -76,7 +76,7 @@ def word_former(word_transcription, word_indexation, word_note):
 
         if 'pred' in word_indexation:  # предикат
             fin = word_note
-            index = findall('\((\d+)\)', word_indexation)[0]
+            index = int(findall('\((\d+)\)', word_indexation)[0])
 
             word = Pred(word_transcription, fin, index)
 
@@ -152,14 +152,48 @@ def tsv2list(all_translation, all_transcription, all_indexation, all_note):
  """
 
 
+# def wad(mean, context):
+#
+#     WAD = 0
+#
+#     for sentence in context[::-1]:
+#         for word in sentence.words[::-1]:
+#             if type(word) is RefDevice and word.typ == 'NP' and mean.referent == word.referent.lower() and mean.index > word.index:
+#                 WAD = mean.index - word.index
+#                 break
+#         else:
+#             continue
+#         break
+#
+#     return WAD
+#
+#
+# def nad(mean, context):
+#     NAD = 0
+#
+#     for sentence in context[::-1]:
+#         for word in sentence.words[::-1]:
+#             if type(word) is RefDevice and word.typ in ['dem_prox', 'dem_med', 'dem_dist', 'dem_self', 'null'] and mean.referent == word.referent.lower() and mean.index > word.index:
+#                 NAD = mean.index - word.index
+#                 break
+#         else:
+#             continue
+#         break
+#
+#     return NAD
+
 def wad(mean, context):
 
     WAD = 0
+    fin_pred = 0
 
     for sentence in context[::-1]:
         for word in sentence.words[::-1]:
-            if type(word) is RefDevice and word.typ == 'NP' and mean.referent == word.referent.lower() and mean.index > word.index:
-                WAD = mean.index - word.index
+            if type(word) is Pred and word.fin == 'Fin' and word.index != mean.index:
+                #print(word.transcription, word.fin, word.index, mean.referent + str(mean.index), fin_pred + 1)
+                fin_pred += 1
+            elif type(word) is RefDevice and word.typ == 'NP' and mean.referent == word.referent.lower() and mean.index > word.index:
+                WAD = fin_pred
                 break
         else:
             continue
@@ -170,11 +204,15 @@ def wad(mean, context):
 
 def nad(mean, context):
     NAD = 0
+    fin_pred = 0
 
     for sentence in context[::-1]:
         for word in sentence.words[::-1]:
-            if type(word) is RefDevice and word.typ in ['dem_prox', 'dem_med', 'dem_dist', 'dem_self', 'null'] and mean.referent == word.referent.lower() and mean.index > word.index:
-                NAD = mean.index - word.index
+            if type(word) is Pred and word.fin == 'Fin' and word.index != mean.index:
+                #print(word.transcription, word.fin, word.index, mean.referent + str(mean.index), fin_pred + 1)
+                fin_pred += 1
+            elif type(word) is RefDevice and word.typ in ['dem_prox', 'dem_med', 'dem_dist', 'dem_self', 'null', 'NP'] and mean.referent == word.referent.lower() and mean.index > word.index:
+                NAD = fin_pred
                 break
         else:
             continue
@@ -192,8 +230,7 @@ def ad_calc(text):
                 NAD = nad(word, context)
                 WAD = wad(word, context)
 
-                if NAD == 0:
-                    NAD = WAD
+                print(word.referent + str(word.index), NAD, WAD)
 
                 ad_list.append([word, NAD, WAD])
 
@@ -263,6 +300,7 @@ def main():
                           'dem_self': {'mean_wad': [], 'mean_nad': [], 'count': []}}
 
     for file in files:
+        print(file)
         txt = op(join('texts_done', file))
         all_translation, all_transcription, all_indexation, all_note = parse_tsv(txt)
 
