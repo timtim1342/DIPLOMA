@@ -47,6 +47,9 @@ class RefDevice:
         self.typ = typ
         self.index = index
 
+class PredNotFound(Exception):
+    pass
+
 
 """ 
 
@@ -143,6 +146,15 @@ def tsv2list(all_translation, all_transcription, all_indexation, all_note):
         text.append(sentence)
     return text
 
+def get_pred(context, index):
+
+    """поиск предиката по индексу"""
+
+    for sentence in context:
+        for word in sentence.words:
+            if type(word) is Pred and index == word.index:
+                return word
+    raise PredNotFound('Предикат не найден.')
 
 """
 
@@ -194,6 +206,9 @@ def wad(mean, context):
                 fin_pred += 1
             elif type(word) is RefDevice and word.typ == 'NP' and mean.referent == word.referent.lower() and mean.index > word.index:
                 WAD = fin_pred
+
+                ant_pred = get_pred(context, word.index)
+                WAD += ant_pred.fin == 'Fin'
                 break
         else:
             continue
@@ -213,6 +228,9 @@ def nad(mean, context):
                 fin_pred += 1
             elif type(word) is RefDevice and word.typ in ['dem_prox', 'dem_med', 'dem_dist', 'dem_self', 'null', 'NP'] and mean.referent == word.referent.lower() and mean.index > word.index:
                 NAD = fin_pred
+
+                ant_pred = get_pred(context, word.index)
+                NAD += ant_pred.fin == 'Fin'
                 break
         else:
             continue
@@ -291,6 +309,31 @@ def rd(text):
     RD = overt_n / arg_n
     return RD
 
+"""
+
+запись
+данных
+
+"""
+
+def write_data(file_name, pear_name, rd_data, ad_data):
+
+    """записывает данные в таблицу (обращается не по индексу, проблема?)"""
+
+    line = pear_name + '\t' + \
+             str(rd_data) + '\t' + \
+             '\t'.join(map(str, [ad_data['null']['mean_wad'], ad_data['null']['mean_nad'], ad_data['null']['count'],
+                        ad_data['dem_med']['mean_wad'], ad_data['dem_med']['mean_nad'], ad_data['dem_med']['count'],
+                        ad_data['dem_prox']['mean_wad'], ad_data['dem_prox']['mean_nad'], ad_data['dem_prox']['count'],
+                        ad_data['dem_dist']['mean_wad'], ad_data['dem_dist']['mean_nad'], ad_data['dem_dist']['count'],
+                        ad_data['dem_self']['mean_wad'], ad_data['dem_self']['mean_nad'], ad_data['dem_self']['count']])
+                       )
+
+    wr(file_name, line + '\n')
+
+
+
+
 def main():
     files = listdir('texts_done')
     ad_mean_dict_total = {'null': {'mean_wad': [], 'mean_nad': [], 'count': []},
@@ -299,10 +342,23 @@ def main():
                           'dem_dist': {'mean_wad': [], 'mean_nad': [], 'count': []},
                           'dem_self': {'mean_wad': [], 'mean_nad': [], 'count': []}}
 
+    file_name = 'results.tsv'
+
+    header = 'pear name\tRD\t' + \
+             'WAD_Fin_null\tNAD_Fin_null\tcount_null\t' +\
+             'WAD_Fin_dem_med\tNAD_Fin_dem_med\tcount_dem_med\t' + \
+             'WAD_Fin_dem_prox\tNAD_Fin_dem_prox\tcount_dem_prox\t' + \
+             'WAD_Fin_dem_dist\tNAD_Fin_dem_dist\tcount_dem_dist\t' + \
+             'WAD_Fin_dem_self\tNAD_Fin_dem_self\tcount_dem_self\t'
+
+
+    with open(file_name, 'w', encoding='utf-8') as f:
+        f.write(header + '\n')
+
     for file in files:
-        print(file)
         txt = op(join('texts_done', file))
         all_translation, all_transcription, all_indexation, all_note = parse_tsv(txt)
+
 
         try:
             text = tsv2list(all_translation, all_transcription, all_indexation, all_note)
@@ -312,19 +368,18 @@ def main():
             print(file)
 
         ad_list = ad_calc(text)
-
-
         ad_mean_dict_total = ad_mean_all_texts(ad_mean(ad_list), ad_mean_dict_total)
 
-        print(ad_mean(ad_list))
+        write_data(file_name, file, rd(text), ad_mean(ad_list))
 
-        print(rd(text))
-        print()
 
-    print('----------------------------------------\n', ad_mean_dict_total)
+
     ad_mean_dict_total = ad_count_mean(ad_mean_dict_total)
-    print()
-    print('========================================\n', ad_mean_dict_total)
+
+    # print()
+    # print('========================================\n', ad_mean_dict_total)
+
+    write_data(file_name, 'TOTAL', 'ND', ad_mean_dict_total)
 
 
 if __name__ == '__main__':
