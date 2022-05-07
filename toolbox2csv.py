@@ -29,15 +29,17 @@ class Sentence:
         try:
             morphs_merged, glosses_merged = self.merge_glosses_morphs()
             line += '\n'
-            line += '\t'.join(morphs_merged) + '\n'
-            line += '\t'.join(glosses_merged) + '\n'
+            line += 'Transcription:\t' + '\t'.join(morphs_merged) + '\n'
+            line += 'Glosses:\t' + '\t'.join(glosses_merged) + '\n'
 
         except ParseError:
             line += ' ParseError\n'
-            line += '\t'.join(' '.join(self.morphs).replace('- ', '-').replace(' -', '-').split()) + '\n'
-            line += '\t'.join(' '.join(self.glosses).replace('- ', '-').replace(' -', '-').split()) + '\n'
+            line += 'Transcription:\t' + '\t'.join(' '.join(self.morphs).replace('- ', '-').replace(' -', '-').split()) + '\n'
+            line += 'Glosses:\t' + '\t'.join(' '.join(self.glosses).replace('- ', '-').replace(' -', '-').split()) + '\n'
 
-        line += self.translation + '\n' + '\n'
+        line += 'Note:\n'
+        line += 'Indexation:\n'
+        line += 'Translation:\t' + self.translation + '\n' + '\n'
         return line
 
 def op(file_name):
