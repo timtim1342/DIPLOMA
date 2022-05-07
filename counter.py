@@ -272,16 +272,30 @@ def ad_count_mean(ad_mean_dict_total):
 
 def rd(text):
     arg_n, overt_n = 0, 0
+
     arg_sg_n, overt_sg_n = 0, 0
     arg_pl_n, overt_pl_n = 0, 0
+
     arg_an_n, overt_an_n = 0, 0
     arg_nan_n, overt_nan_n = 0, 0
+
+    arg_0_n, overt_0_n = 0, 0
+    arg_1_n, overt_1_n = 0, 0
+    arg_2_n, overt_2_n = 0, 0
+    arg_3_n, overt_3_n = 0, 0
+
+    arg_abs_n, overt_abs_n = 0, 0
+    arg_erg_n, overt_erg_n = 0, 0
+    arg_dat_n, overt_dat_n = 0, 0
+    arg_loc_n, overt_loc_n = 0, 0
+
+    arg_fin_n, overt_fin_n = 0, 0
+    arg_nfin_n, overt_nfin_n = 0, 0
 
     for sentence in text:
         for word in sentence.words:
             if type(word) is RefDevice and word.n_arg != 'NOTARG':
                 arg_n += 1
-
                 if word.number == 'SG':
                     arg_sg_n += 1
                 else:
@@ -291,6 +305,29 @@ def rd(text):
                     arg_an_n += 1
                 else:
                     arg_nan_n += 1
+
+                if word.n_arg == '0':
+                    arg_0_n += 1
+                elif word.n_arg == '1':
+                    arg_1_n += 1
+                elif word.n_arg == '2':
+                    arg_2_n += 1
+                elif word.n_arg == '3':
+                    arg_3_n += 1
+
+                if word.case == 'ABS':
+                    arg_abs_n += 1
+                elif word.case == 'ERG':
+                    arg_erg_n += 1
+                elif word.case == 'DAT':
+                    arg_dat_n += 1
+                elif word.case == 'LOC':
+                    arg_loc_n += 1
+
+                if get_pred(text, word.index).fin == 'Fin':
+                    arg_fin_n += 1
+                else:
+                    arg_nfin_n += 1
 
                 if word.typ in ['NP', 'dem']:
                     overt_n += 1
@@ -305,22 +342,83 @@ def rd(text):
                     else:
                         overt_nan_n += 1
 
+                    if word.n_arg == '0':
+                        overt_0_n += 1
+                    elif word.n_arg == '1':
+                        overt_1_n += 1
+                    elif word.n_arg == '2':
+                        overt_2_n += 1
+                    elif word.n_arg == '3':
+                        overt_3_n += 1
+
+                    if word.case == 'ABS':
+                        overt_abs_n += 1
+                    elif word.case == 'ERG':
+                        overt_erg_n += 1
+                    elif word.case == 'DAT':
+                        overt_dat_n += 1
+                    elif word.case == 'LOC':
+                        overt_loc_n += 1
+
+                    if get_pred(text, word.index).fin == 'Fin':
+                        overt_fin_n += 1
+                    else:
+                        overt_nfin_n += 1
+
     RD = overt_n / arg_n
+
     RD_SG = overt_sg_n / arg_sg_n
     RD_PL = overt_pl_n / arg_pl_n
+
     RD_AN = overt_an_n / arg_an_n
     RD_NAN = overt_nan_n / arg_nan_n
+
+    RD_0 = overt_0_n / arg_0_n
+    RD_1 = overt_1_n / arg_1_n
+    RD_2 = overt_2_n / arg_2_n
+    RD_3 = overt_3_n / arg_3_n
+
+    RD_ABS = overt_abs_n / arg_abs_n
+    RD_ERG = overt_erg_n / arg_erg_n
+    RD_DAT = overt_dat_n / arg_dat_n
+    try:
+        RD_LOC = overt_loc_n / arg_loc_n
+    except:
+        RD_LOC = 'ND'
+
+    RD_FIN = overt_fin_n / arg_fin_n
+    RD_NFIN = overt_nfin_n / arg_nfin_n
 
     RD_dict = {'RD': RD,
                'RD_SG': RD_SG,
                'RD_PL': RD_PL,
                'RD_AN': RD_AN,
                'RD_NAN': RD_NAN,
+               'RD_0': RD_0,
+               'RD_1': RD_1,
+               'RD_2': RD_2,
+               'RD_3': RD_3,
+               'RD_ABS': RD_ABS,
+               'RD_ERG': RD_ERG,
+               'RD_DAT': RD_DAT,
+               'RD_LOC': RD_LOC,
+               'RD_FIN': RD_FIN,
+               'RD_NFIN': RD_NFIN,
                'arg_n': arg_n,
                'arg_sg_n': arg_sg_n,
                'arg_pl_n': arg_pl_n,
                'arg_an_n': arg_an_n,
-               'arg_nan_n': arg_nan_n
+               'arg_nan_n': arg_nan_n,
+               'arg_0_n': arg_0_n,
+               'arg_1_n': arg_1_n,
+               'arg_2_n': arg_2_n,
+               'arg_3_n': arg_3_n,
+               'arg_abs_n': arg_abs_n,
+               'arg_erg_n': arg_erg_n,
+               'arg_dat_n': arg_dat_n,
+               'arg_loc_n': arg_loc_n,
+               'arg_fin_n': arg_fin_n,
+               'arg_nfin_n': arg_nfin_n
 
     }
 
@@ -356,7 +454,17 @@ def write_rd(file_name, pear_name, rd_data):
                                  rd_data['RD_SG'], rd_data['arg_sg_n'],
                                  rd_data['RD_PL'], rd_data['arg_pl_n'],
                                  rd_data['RD_AN'], rd_data['arg_an_n'],
-                                 rd_data['RD_NAN'], rd_data['arg_nan_n']
+                                 rd_data['RD_NAN'], rd_data['arg_nan_n'],
+                                 rd_data['RD_0'], rd_data['arg_0_n'],
+                                 rd_data['RD_1'], rd_data['arg_1_n'],
+                                 rd_data['RD_2'], rd_data['arg_2_n'],
+                                 rd_data['RD_3'], rd_data['arg_3_n'],
+                                 rd_data['RD_ABS'], rd_data['arg_abs_n'],
+                                 rd_data['RD_ERG'], rd_data['arg_erg_n'],
+                                 rd_data['RD_DAT'], rd_data['arg_dat_n'],
+                                 rd_data['RD_LOC'], rd_data['arg_loc_n'],
+                                 rd_data['RD_FIN'], rd_data['arg_fin_n'],
+                                 rd_data['RD_NFIN'], rd_data['arg_nfin_n']
                                  ])
                        )
 
@@ -386,7 +494,18 @@ def main():
                            'RD_SG', 'arg_sg_n',
                            'RD_PL', 'arg_pl_n',
                            'RD_AN', 'arg_an_n',
-                           'RD_NAN', 'arg_nan_n'])
+                           'RD_NAN', 'arg_nan_n',
+                           'RD_0', 'arg_0_n',
+                           'RD_1', 'arg_1_n',
+                           'RD_2', 'arg_2_n',
+                           'RD_3', 'arg_3_n',
+                           'RD_ABS', 'arg_abs_n',
+                           'RD_ERG', 'arg_erg_n',
+                           'RD_DAT', 'arg_dat_n',
+                           'RD_LOC', 'arg_loc_n',
+                           'RD_FIN', 'arg_fin_n',
+                           'RD_NFIN', 'arg_nfin_n'
+                           ])
 
     with open(file_name_ad, 'w', encoding='utf-8') as f:
         f.write(header_ad + '\n')
@@ -394,6 +513,7 @@ def main():
         f.write(header_rd + '\n')
 
     for file in files:
+        print(file)
         txt = op(join('texts_done', file))
         all_translation, all_transcription, all_indexation, all_note = parse_tsv(txt)
 
