@@ -120,7 +120,7 @@ def word_former(word_transcription, word_indexation, word_note):
                     n_arg = findall('(\d+)\(', word_note)[0]
                     case = findall('\((.+)\)', word_note)[0]
                 except IndexError as e:
-                    print(word_transcription)
+                    print(word_transcription, index)
                     raise e
 
 
@@ -159,7 +159,8 @@ def get_pred(context, index):
         for word in sentence.words:
             if type(word) is Pred and index == word.index:
                 return word
-    raise PredNotFound('Предикат не найден.')
+    raise PredNotFound('Предикат не найден для слова с номером ' + str(index))
+
 
 """
 
@@ -386,7 +387,11 @@ def rd(text):
     except:
         RD_LOC = 'ND'
 
-    RD_FIN = overt_fin_n / arg_fin_n
+    try:
+        RD_FIN = overt_fin_n / arg_fin_n
+    except:
+        RD_FIN = 'ND'
+
     RD_NFIN = overt_nfin_n / arg_nfin_n
 
     RD_dict = {'RD': RD,
@@ -472,23 +477,76 @@ def write_rd(file_name, pear_name, rd_data):
 
 
 def main():
-    files = listdir('texts_done')
-    ad_mean_dict_total = {'null': {'mean_wad': [], 'mean_nad': [], 'count': []},
-                          'dem_med': {'mean_wad': [], 'mean_nad': [], 'count': []},
-                          'dem_prox': {'mean_wad': [], 'mean_nad': [], 'count': []},
-                          'dem_dist': {'mean_wad': [], 'mean_nad': [], 'count': []},
-                          'dem_self': {'mean_wad': [], 'mean_nad': [], 'count': []}}
+    # KINA
+    # files = listdir(join('texts_done', 'KINA'))
+    # ad_mean_dict_total = {'null': {'mean_wad': [], 'mean_nad': [], 'count': []},
+    #                       'dem_med': {'mean_wad': [], 'mean_nad': [], 'count': []},
+    #                       'dem_prox': {'mean_wad': [], 'mean_nad': [], 'count': []},
+    #                       'dem_dist': {'mean_wad': [], 'mean_nad': [], 'count': []},
+    #                       'dem_self': {'mean_wad': [], 'mean_nad': [], 'count': []}}
+    #
+    # file_name_ad = 'results_ad_kina.tsv'
+    # file_name_rd = 'results_rd_kina.tsv'
+    #
+    # header_ad = 'pear name\t' + \
+    #          'WAD_Fin_null\tNAD_Fin_null\tcount_null\t' +\
+    #          'WAD_Fin_dem_med\tNAD_Fin_dem_med\tcount_dem_med\t' + \
+    #          'WAD_Fin_dem_prox\tNAD_Fin_dem_prox\tcount_dem_prox\t' + \
+    #          'WAD_Fin_dem_dist\tNAD_Fin_dem_dist\tcount_dem_dist\t' + \
+    #          'WAD_Fin_dem_self\tNAD_Fin_dem_self\tcount_dem_self\t'
+    #
+    # header_rd = 'pear name\t' + \
+    #             '\t'.join(['RD', 'arg_n',
+    #                        'RD_SG', 'arg_sg_n',
+    #                        'RD_PL', 'arg_pl_n',
+    #                        'RD_AN', 'arg_an_n',
+    #                        'RD_NAN', 'arg_nan_n',
+    #                        'RD_0', 'arg_0_n',
+    #                        'RD_1', 'arg_1_n',
+    #                        'RD_2', 'arg_2_n',
+    #                        'RD_3', 'arg_3_n',
+    #                        'RD_ABS', 'arg_abs_n',
+    #                        'RD_ERG', 'arg_erg_n',
+    #                        'RD_DAT', 'arg_dat_n',
+    #                        'RD_LOC', 'arg_loc_n',
+    #                        'RD_FIN', 'arg_fin_n',
+    #                        'RD_NFIN', 'arg_nfin_n'
+    #                        ])
+    #
+    # with open(file_name_ad, 'w', encoding='utf-8') as f:
+    #     f.write(header_ad + '\n')
+    # with open(file_name_rd, 'w', encoding='utf-8') as f:
+    #     f.write(header_rd + '\n')
+    #
+    # for file in files:
+    #     print(file)
+    #     txt = op(join('texts_done', 'KINA', file))
+    #     all_translation, all_transcription, all_indexation, all_note = parse_tsv(txt)
+    #
+    #     try:
+    #         text = tsv2list(all_translation, all_transcription, all_indexation, all_note)
+    #     except Exception as ex:
+    #         print(ex)
+    #         print(traceback.format_exc())
+    #         print(file)
+    #
+    #     ad_list = ad_calc(text)
+    #     ad_mean_dict_total = ad_mean_all_texts(ad_mean(ad_list), ad_mean_dict_total)
+    #
+    #     write_ad(file_name_ad, file, ad_mean(ad_list))
+    #     write_rd(file_name_rd, file, rd(text))
+    #
+    # ad_mean_dict_total = ad_count_mean(ad_mean_dict_total)
+    #
+    # # print()
+    # # print('========================================\n', ad_mean_dict_total)
+    #
+    # write_ad(file_name_ad, 'TOTAL', ad_mean_dict_total)
 
-    file_name_ad = 'results_ad.tsv'
-    file_name_rd = 'results_rd.tsv'
 
-    header_ad = 'pear name\t' + \
-             'WAD_Fin_null\tNAD_Fin_null\tcount_null\t' +\
-             'WAD_Fin_dem_med\tNAD_Fin_dem_med\tcount_dem_med\t' + \
-             'WAD_Fin_dem_prox\tNAD_Fin_dem_prox\tcount_dem_prox\t' + \
-             'WAD_Fin_dem_dist\tNAD_Fin_dem_dist\tcount_dem_dist\t' + \
-             'WAD_Fin_dem_self\tNAD_Fin_dem_self\tcount_dem_self\t'
-
+    # MEHWEB-SANZHI
+    files = listdir(join('texts_done', 'SANZHI'))
+    file_name_rd = 'results_rd_sanzhi.tsv'
     header_rd = 'pear name\t' + \
                 '\t'.join(['RD', 'arg_n',
                            'RD_SG', 'arg_sg_n',
@@ -506,15 +564,12 @@ def main():
                            'RD_FIN', 'arg_fin_n',
                            'RD_NFIN', 'arg_nfin_n'
                            ])
-
-    with open(file_name_ad, 'w', encoding='utf-8') as f:
-        f.write(header_ad + '\n')
     with open(file_name_rd, 'w', encoding='utf-8') as f:
         f.write(header_rd + '\n')
 
     for file in files:
         print(file)
-        txt = op(join('texts_done', file))
+        txt = op(join('texts_done', 'SANZHI', file))
         all_translation, all_transcription, all_indexation, all_note = parse_tsv(txt)
 
         try:
@@ -524,19 +579,7 @@ def main():
             print(traceback.format_exc())
             print(file)
 
-        ad_list = ad_calc(text)
-        ad_mean_dict_total = ad_mean_all_texts(ad_mean(ad_list), ad_mean_dict_total)
-
-        write_ad(file_name_ad, file, ad_mean(ad_list))
         write_rd(file_name_rd, file, rd(text))
-
-    ad_mean_dict_total = ad_count_mean(ad_mean_dict_total)
-
-    # print()
-    # print('========================================\n', ad_mean_dict_total)
-
-    write_ad(file_name_ad, 'TOTAL', ad_mean_dict_total)
-
 
 if __name__ == '__main__':
     main()
