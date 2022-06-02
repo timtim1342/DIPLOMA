@@ -179,7 +179,7 @@ def wad(mean, context):
             if type(word) is Pred and word.fin == 'Fin' and word.index != mean.index:
                 #print(word.transcription, word.fin, word.index, mean.referent + str(mean.index), fin_pred + 1)
                 fin_pred += 1
-            elif type(word) is RefDevice and word.typ == 'NP' and mean.referent == word.referent.lower() and mean.index > word.index:
+            elif type(word) is RefDevice and word.typ == 'NP' and mean.referent.lower() == word.referent.lower() and mean.index > word.index:
                 WAD = fin_pred
 
                 ant_pred = get_pred(context, word.index)
@@ -189,7 +189,7 @@ def wad(mean, context):
             continue
         break
 
-    return WAD
+    return [WAD, word]
 
 
 def nad(mean, context):
@@ -201,7 +201,7 @@ def nad(mean, context):
             if type(word) is Pred and word.fin == 'Fin' and word.index != mean.index:
                 #print(word.transcription, word.fin, word.index, mean.referent + str(mean.index), fin_pred + 1)
                 fin_pred += 1
-            elif type(word) is RefDevice and word.typ in ['dem_prox', 'dem_med', 'dem_dist', 'dem_self', 'null', 'NP'] and mean.referent == word.referent.lower() and mean.index > word.index:
+            elif type(word) is RefDevice and word.typ in ['dem_prox', 'dem_med', 'dem_dist', 'dem_self', 'null', 'NP'] and mean.referent.lower() == word.referent.lower() and mean.index > word.index:
                 NAD = fin_pred
 
                 ant_pred = get_pred(context, word.index)
@@ -211,21 +211,22 @@ def nad(mean, context):
             continue
         break
 
-    return NAD
+    return [NAD, word]
 
 def ad_calc(text):
     sent_n = 0
     ad_list = []
     for sentence in text:
         for word in sentence.words:
-            if type(word) is RefDevice and word.typ != 'NP':
+            if type(word) is RefDevice:  # and word.typ != 'NP'
                 context = text[:sent_n + 1]
-                NAD = nad(word, context)
-                WAD = wad(word, context)
+                NAD, target_nad = nad(word, context)
+                WAD, target_wad = wad(word, context)
+
 
                 print(word.referent + str(word.index), NAD, WAD)
 
-                ad_list.append([word, NAD, WAD])
+                ad_list.append([word, NAD, WAD, target_nad, target_wad])
 
         sent_n += 1
 
@@ -475,6 +476,49 @@ def write_rd(file_name, pear_name, rd_data):
 
     wr(file_name, line + '\n')
 
+def write_data4rd_r(file_name, pear_name, text):
+    """записывает данные по тексту в таблицу для R"""
+    text_line = ''
+
+    for sentence in text:
+        for word in sentence.words:
+            if type(word) is RefDevice:
+                word_pred = get_pred(text, word.index)
+                text_line += '\t'.join([pear_name, word.transcription, word.referent, str(word.index), word.typ, word.n_arg,
+                                        word.number, word.case, word.anim, word_pred.transcription, word_pred.fin
+                                        ]) + '\n'
+    wr(file_name, text_line)
+
+
+def write_ad_r(file_name, pear_name, ad_data):
+
+    """записывает данные по AD в таблицу R формат (обращается не по индексу, проблема?)"""
+
+    for ref_dev in ad_data:
+        word, NAD, WAD, target_nad, target_wad = ref_dev
+        if not type(target_nad) is RefDevice or not type(target_wad) is RefDevice:
+            target_nad_transcription, target_nad_index, target_nad_arg, target_wad_transcription, target_wad_index, target_wad_arg = \
+                'ND', 'ND', 'ND', 'ND', 'ND', 'ND'
+        else:
+            target_nad_transcription, target_nad_index, target_nad_arg, target_wad_transcription, target_wad_index, target_wad_arg =\
+                target_nad.transcription, str(target_nad.index), target_nad.n_arg, target_wad.transcription, str(target_wad.index), target_wad.n_arg
+
+        line = '\t'.join([word.transcription,
+                          word.referent,
+                          word.typ,
+                          word.n_arg,
+                          str(word.index),
+                          str(NAD),
+                          str(WAD),
+                          target_nad_transcription,
+                          target_nad_index,
+                          target_nad_arg,
+                          target_wad_transcription,
+                          target_wad_index,
+                          target_wad_arg,
+                          pear_name])
+
+        wr(file_name, line + '\n')
 
 def main():
     # KINA
@@ -544,32 +588,17 @@ def main():
     # write_ad(file_name_ad, 'TOTAL', ad_mean_dict_total)
 
 
-    # MEHWEB-SANZHI
-    files = listdir(join('texts_done', 'SANZHI'))
-    file_name_rd = 'results_rd_sanzhi.tsv'
-    header_rd = 'pear name\t' + \
-                '\t'.join(['RD', 'arg_n',
-                           'RD_SG', 'arg_sg_n',
-                           'RD_PL', 'arg_pl_n',
-                           'RD_AN', 'arg_an_n',
-                           'RD_NAN', 'arg_nan_n',
-                           'RD_0', 'arg_0_n',
-                           'RD_1', 'arg_1_n',
-                           'RD_2', 'arg_2_n',
-                           'RD_3', 'arg_3_n',
-                           'RD_ABS', 'arg_abs_n',
-                           'RD_ERG', 'arg_erg_n',
-                           'RD_DAT', 'arg_dat_n',
-                           'RD_LOC', 'arg_loc_n',
-                           'RD_FIN', 'arg_fin_n',
-                           'RD_NFIN', 'arg_nfin_n'
-                           ])
+    # RD to R
+    files = listdir(join('texts_done', 'KINA'))
+
+    file_name_rd = 'results_data4rd_r_kina.tsv'
+    header_ad = 'pear\ttrans\treferent\tindex\ttype\tn_arg\tnumber\tcase\tanim\tpred\tfin'
     with open(file_name_rd, 'w', encoding='utf-8') as f:
-        f.write(header_rd + '\n')
+        f.write(header_ad + '\n')
 
     for file in files:
         print(file)
-        txt = op(join('texts_done', 'SANZHI', file))
+        txt = op(join('texts_done', 'KINA', file))
         all_translation, all_transcription, all_indexation, all_note = parse_tsv(txt)
 
         try:
@@ -579,7 +608,71 @@ def main():
             print(traceback.format_exc())
             print(file)
 
-        write_rd(file_name_rd, file, rd(text))
+        write_data4rd_r(file_name_rd, file, text)
+
+
+    # # AD to R
+    # files = listdir(join('texts_done', 'KINA'))
+    #
+    # file_name_ad = 'results_ad_r_kina.tsv'
+    # header_ad = 'refdef\treferent\treftype\tref_n_arg\tindex\tnad\twad\ttarg_nad\ttarg_nad_ind\ttarg_nad_arg\ttarg_wad\ttarg_wad_ind\ttarg_wad_arg\tpearname'
+    # with open(file_name_ad, 'w', encoding='utf-8') as f:
+    #     f.write(header_ad + '\n')
+    #
+    # for file in files:
+    #     print(file)
+    #     txt = op(join('texts_done', 'KINA', file))
+    #     all_translation, all_transcription, all_indexation, all_note = parse_tsv(txt)
+    #
+    #     try:
+    #         text = tsv2list(all_translation, all_transcription, all_indexation, all_note)
+    #     except Exception as ex:
+    #         print(ex)
+    #         print(traceback.format_exc())
+    #         print(file)
+    #
+    #
+    #     ad_list = ad_calc(text)
+    #     write_ad_r(file_name_ad, file, ad_list)
+
+
+    # # MEHWEB-SANZHI
+    # files = listdir(join('texts_done', 'SANZHI'))
+    # file_name_rd = 'results_rd_sanzhi.tsv'
+    # header_rd = 'pear name\t' + \
+    #             '\t'.join(['RD', 'arg_n',
+    #                        'RD_SG', 'arg_sg_n',
+    #                        'RD_PL', 'arg_pl_n',
+    #                        'RD_AN', 'arg_an_n',
+    #                        'RD_NAN', 'arg_nan_n',
+    #                        'RD_0', 'arg_0_n',
+    #                        'RD_1', 'arg_1_n',
+    #                        'RD_2', 'arg_2_n',
+    #                        'RD_3', 'arg_3_n',
+    #                        'RD_ABS', 'arg_abs_n',
+    #                        'RD_ERG', 'arg_erg_n',
+    #                        'RD_DAT', 'arg_dat_n',
+    #                        'RD_LOC', 'arg_loc_n',
+    #                        'RD_FIN', 'arg_fin_n',
+    #                        'RD_NFIN', 'arg_nfin_n'
+    #                        ])
+    # with open(file_name_rd, 'w', encoding='utf-8') as f:
+    #     f.write(header_rd + '\n')
+    #
+    # for file in files:
+    #     print(file)
+    #     txt = op(join('texts_done', 'SANZHI', file))
+    #     all_translation, all_transcription, all_indexation, all_note = parse_tsv(txt)
+    #
+    #     try:
+    #         text = tsv2list(all_translation, all_transcription, all_indexation, all_note)
+    #     except Exception as ex:
+    #         print(ex)
+    #         print(traceback.format_exc())
+    #         print(file)
+    #
+    #     write_rd(file_name_rd, file, rd(text))
+
 
 if __name__ == '__main__':
     main()
