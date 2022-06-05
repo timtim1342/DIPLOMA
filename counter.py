@@ -93,7 +93,7 @@ def word_former(word_transcription, word_indexation, word_note):
                 referent = findall('([^/(]+)\(.+\)', word_indexation)[0]
                 index = int(findall('\((\d+)\)', word_indexation)[0])
                 number = 'PL' if referent.lower() in ['pear', 'boys'] else 'SG'
-                anim = 'ANIM' if referent.lower() in ['boy', 'boy2', 'boy3', 'boy4' 'boys', 'man', 'man2', 'girl',
+                anim = 'ANIM' if referent.lower() in ['boy', 'boy2', 'boy3', 'boy4', 'boys', 'man', 'man2', 'girl',
                                                       'rooster'] else 'NANIM'
 
             except IndexError as e:
