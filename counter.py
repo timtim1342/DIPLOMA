@@ -23,13 +23,14 @@ class Pred:
 
     """"""
 
-    def __init__(self, transcription, fin, index):
+    def __init__(self, transcription, fin, index, switchref=None):
 
         """"""
 
         self.transcription = transcription  # можно сделать черех наследование
         self.fin = fin
         self.index = index
+        self.switchref = switchref
 
 
 class RefDevice:
@@ -80,10 +81,11 @@ def word_former(word_transcription, word_indexation, word_note):
     if word_indexation != '':  # размеченное слово
 
         if 'pred' in word_indexation:  # предикат
-            fin = word_note
+            fin = word_note.split('.')[0]
+            switchref = word_note.split('.')[1]
             index = int(findall('\((\d+)\)', word_indexation)[0])
 
-            word = Pred(word_transcription, fin, index)
+            word = Pred(word_transcription, fin, index, switchref)
 
         else:  # референциальное средство
             n_arg = 'NOTARG'
@@ -485,7 +487,7 @@ def write_data4rd_r(file_name, pear_name, text):
             if type(word) is RefDevice:
                 word_pred = get_pred(text, word.index)
                 text_line += '\t'.join([pear_name, word.transcription, word.referent, str(word.index), word.typ, word.n_arg,
-                                        word.number, word.case, word.anim, word_pred.transcription, word_pred.fin
+                                        word.number, word.case, word.anim, word_pred.transcription, word_pred.fin, word_pred.switchref
                                         ]) + '\n'
     wr(file_name, text_line)
 
@@ -592,7 +594,7 @@ def main():
     files = listdir(join('texts_done', 'KINA'))
 
     file_name_rd = 'results_data4rd_r_kina.tsv'
-    header_ad = 'pear\ttrans\treferent\tindex\ttype\tn_arg\tnumber\tcase\tanim\tpred\tfin'
+    header_ad = 'pear\ttrans\treferent\tindex\ttype\tn_arg\tnumber\tcase\tanim\tpred\tfin\tswitchref'
     with open(file_name_rd, 'w', encoding='utf-8') as f:
         f.write(header_ad + '\n')
 
